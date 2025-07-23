@@ -34,4 +34,5 @@ def get_diary_dates():
 
 if __name__ == "__main__":
     dates = get_diary_dates()
-    print(json.dumps(dates))
+    with open("dates.json", "w") as f:
+        json.dump(dates, f)
