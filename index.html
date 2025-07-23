@@ -2,62 +2,52 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>日记热力图</title>
+  <title>我的日记热力图</title>
   <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.css" rel="stylesheet" />
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-    }
+    body { font-family: sans-serif; padding: 2rem; }
   </style>
 </head>
 <body>
   <h1>我的日记热力图</h1>
   <div id="heatmap"></div>
+
   <script type="module">
-  import CalHeatmap from "https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js";
+    import CalHeatmap from "https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js";
 
-  async function initHeatmap() {
-    // 先 fetch 数据
-    const resp = await fetch('data.json');
-    const raw = await resp.json();
+    async function initHeatmap() {
+      const resp = await fetch('data.json');
+      const raw = await resp.json();
+      const arr = Object.entries(raw).map(([date, value]) => ({
+        date,
+        value: +value
+      }));
+      const maxVal = Math.max(...arr.map(d => d.value), 1);
 
-    // 转换为支持格式：[{date:"YYYY-MM-DD", value: n}, ...]
-    const arr = Object.entries(raw).map(([date, value]) => ({ date, value }));
-
-    const cal = new CalHeatmap();
-
-    cal.paint({
-      itemSelector: "#heatmap",
-      range: 12,
-      domain: {
-        type: "month",
-        gutter: 4,
-      },
-      subDomain: {
-        type: "day",
-        radius: 2,
-        width: 16,
-        height: 16,
-      },
-      data: {
-        source: arr,
-        type: "json",
-        x: datum => +new Date(datum.date),
-        y: datum => +datum.value
-      },
-      scale: {
-        color: {
-          type: "linear",
-          range: ["#ebedf0", "#003366"],
-          domain: [0, 1],
+      const cal = new CalHeatmap();
+      cal.paint({
+        itemSelector: "#heatmap",
+        range: 12,
+        domain: { type: "month", gutter: 4 },
+        subDomain: { type: "day", width: 16, height: 16 },
+        data: {
+          source: arr,
+          type: "json",
+          x: d => +new Date(d.date),
+          y: d => d.value
         },
-      },
-    });
-  }
+        scale: {
+          color: {
+            type: "linear",
+            range: ["#ebedf0", "#003366"],
+            domain: [0, maxVal]
+          }
+        }
+      });
+    }
 
-  initHeatmap();
-</script>
+    initHeatmap();
+  </script>
 </body>
 </html>
