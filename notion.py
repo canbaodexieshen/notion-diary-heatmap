@@ -1,38 +1,38 @@
-import os, requests, json
+import requests
 
-NOTION_TOKEN = os.environ["NOTION_TOKEN"]
-DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
+NOTION_API_KEY = "你的 Notion Integration Token"
+DATABASE_ID = "你的数据库 ID"
 
-def get_diary_dates():
-    headers = {
-        "Authorization": f"Bearer {NOTION_TOKEN}",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json"
-    }
+headers = {
+    "Authorization": f"Bearer {NOTION_API_KEY}",
+    "Notion-Version": "2022-06-28",
+    "Content-Type": "application/json"
+}
+
+def fetch_diary_dates():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-    all_dates = []
+    has_more = True
     next_cursor = None
+    dates = set()
 
-    while True:
-        payload = {"page_size": 100}
+    while has_more:
+        payload = {
+            "page_size": 100
+        }
         if next_cursor:
             payload["start_cursor"] = next_cursor
 
-        res = requests.post(url, headers=headers, json=payload)
-        res.raise_for_status()
-        data = res.json()
+        response = requests.post(url, headers=headers, json=payload)
+        data = response.json()
 
-        for r in data["results"]:
-            d = r["properties"]["日期"]["date"]
-            if d and d.get("start"):
-                all_dates.append(d["start"])
+        for result in data.get("results", []):
+            properties = result.get("properties", {})
+            date_field = properties.get("日期", {})
+            date_value = date_field.get("date", {})
+            if "start" in date_value:
+                dates.add(date_value["start"])
 
-        if not data.get("has_more"):
-            break
-        next_cursor = data.get("next_cursor")
-    return all_dates
+        has_more = data.get("has_more", False)
+        next_cursor = data.get("next_cursor", None)
 
-if __name__ == "__main__":
-    dates = get_diary_dates()
-    with open("dates.json", "w") as f:
-        json.dump(dates, f)
+    return sorted(dates)
