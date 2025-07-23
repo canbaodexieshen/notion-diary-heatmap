@@ -1,9 +1,14 @@
+# notion.py
+import os
 import requests
 
-NOTION_API_KEY = "你的 Notion Integration Token"
-DATABASE_ID = "你的数据库 ID"
+NOTION_API_KEY = os.getenv("NOTION_API_KEY", "").strip()
+DATABASE_ID = os.getenv("NOTION_DATABASE_ID", "").strip()
 
-headers = {
+if not NOTION_API_KEY or not DATABASE_ID:
+    raise RuntimeError("请确保 NOTION_API_KEY 和 NOTION_DATABASE_ID 已设置为环境变量。")
+
+HEADERS = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
     "Notion-Version": "2022-06-28",
     "Content-Type": "application/json"
@@ -16,23 +21,20 @@ def fetch_diary_dates():
     dates = set()
 
     while has_more:
-        payload = {
-            "page_size": 100
-        }
+        payload = {"page_size": 100}
         if next_cursor:
             payload["start_cursor"] = next_cursor
 
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=HEADERS, json=payload)
+        response.raise_for_status()
         data = response.json()
 
         for result in data.get("results", []):
-            properties = result.get("properties", {})
-            date_field = properties.get("日期", {})
-            date_value = date_field.get("date", {})
-            if "start" in date_value:
+            date_value = result.get("properties", {}).get("日期", {}).get("date", {})
+            if date_value and "start" in date_value:
                 dates.add(date_value["start"])
 
         has_more = data.get("has_more", False)
-        next_cursor = data.get("next_cursor", None)
+        next_cursor = data.get("next_cursor")
 
     return sorted(dates)
