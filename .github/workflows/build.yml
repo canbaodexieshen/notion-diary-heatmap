@@ -1,43 +1,47 @@
 name: Update Heatmap
 
+# 触发机制：定时 + 手动
 on:
   schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点执行
+    - cron: '0 2 * * *'
   workflow_dispatch:
+
+# 关键权限设置
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: pip install -r requirements.txt
 
-      - name: Generate heatmap data
-        env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-        run: |
-          sed -i 's|NOTION_API_KEY = .*|NOTION_API_KEY = "'"$NOTION_API_KEY"'"|' notion.py
-          sed -i 's|DATABASE_ID = .*|DATABASE_ID = "'"$DATABASE_ID"'"|' notion.py
-          python generate_heatmap.py
+    - name: Generate heatmap data
+      env:
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+      run: |
+        python generate_heatmap.py
 
-      - name: Push changes using personal access token
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "github-actions"
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
-          git add -A
-          git commit -m "Update heatmap data" || echo "No changes to commit"
-          git push origin HEAD:main
+    - name: Commit and push changes
+      env:
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        git config --global user.email "actions@github.com"
+        git config --global user.name "github-actions"
+        git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
+        git add .
+        git commit -m "Update heatmap data" || echo "No changes to commit"
+        git push origin HEAD:main
