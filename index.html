@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>日记热力图</title>
+  <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>我的日记热力图</h1>
+  <div id="heatmap"></div>
+  <script type="module">
+    import CalHeatmap from "https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js";
+
+    const cal = new CalHeatmap();
+    cal.paint({
+      range: 12,
+      domain: {
+        type: "month",
+        gutter: 4,
+      },
+      subDomain: {
+        type: "day",
+        radius: 2,
+        width: 16,
+        height: 16,
+      },
+      data: {
+        source: "data.json",
+        type: "json",
+        x: "date",
+        y: "value",
+      },
+      scale: {
+        color: {
+          type: "linear",
+          range: ["#ebedf0", "#003366"],
+          domain: [0, 1],
+        },
+      },
+    });
+  </script>
+</body>
+</html>
