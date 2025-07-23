@@ -1,35 +1,35 @@
-name: Build and Deploy
+name: Build Heatmap
 
 on:
-  push:
-    branches:
-      - main  # 或 master，根据你的默认分支名称而定
+  schedule:
+    - cron: '0 0 * * *'  # 每天 UTC 00:00 自动更新
+  workflow_dispatch:     # 手动触发也可以
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v3
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 生成热力图文件
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python notion.py
+          python generate_heatmap.py
 
-      - name: Generate heatmap HTML
-        run: python generate.py
-
-      - name: Deploy to GitHub Pages
+      - name: 发布到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output  # 假设你生成的 HTML 存放在 output 文件夹
           publish_branch: gh-pages
-          force_orphan: true
+          publish_dir: ./
