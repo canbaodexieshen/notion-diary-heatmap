@@ -1,0 +1,35 @@
+name: Build Heatmap
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天 UTC 00:00
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 环境安装
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 获取 Notion 日记日期并生成为 heatmap.svg
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: |
+          python notion.py > dates.json
+          python generate_heatmap.py
+
+      - name: 发布至 GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./
