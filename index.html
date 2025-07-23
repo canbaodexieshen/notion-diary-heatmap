@@ -16,10 +16,20 @@
   <h1>我的日记热力图</h1>
   <div id="heatmap"></div>
   <script type="module">
-    import CalHeatmap from "https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js";
+  import CalHeatmap from "https://cdn.jsdelivr.net/npm/cal-heatmap@4.0.0/dist/cal-heatmap.min.js";
+
+  async function initHeatmap() {
+    // 先 fetch 数据
+    const resp = await fetch('data.json');
+    const raw = await resp.json();
+
+    // 转换为支持格式：[{date:"YYYY-MM-DD", value: n}, ...]
+    const arr = Object.entries(raw).map(([date, value]) => ({ date, value }));
 
     const cal = new CalHeatmap();
+
     cal.paint({
+      itemSelector: "#heatmap",
       range: 12,
       domain: {
         type: "month",
@@ -32,10 +42,10 @@
         height: 16,
       },
       data: {
-        source: "data.json",
+        source: arr,
         type: "json",
-        x: "date",
-        y: "value",
+        x: datum => +new Date(datum.date),
+        y: datum => +datum.value
       },
       scale: {
         color: {
@@ -45,6 +55,9 @@
         },
       },
     });
-  </script>
+  }
+
+  initHeatmap();
+</script>
 </body>
 </html>
